@@ -2,6 +2,8 @@ import pandas as pd
 import glob
 import argparse
 
+from tqdm import tqdm
+
 from preprocess import preprocess_sample
 from feature_engineering import abun_per_tempbin
 
@@ -10,21 +12,7 @@ TRAIN_LABELS = pd.read_csv("data/train_labels.csv")
 VALID_FILES = glob.glob("data/val_features/*.csv")
 TEST_FILES = glob.glob("data/test_features/*.csv")
 
-parser = argparse.ArgumentParser(description="Feature Engineering Pipeline")
-parser.add_argument("-f",
-                    "--feature",
-                    help="name of feature", type=str)
-parser.add_argument("-i",
-                    "--interval",
-                    help="temperature interval", type=int)
-parser.add_argument("-s",
-                    "--save",
-                    help="enter no or the location to save the model", default='no', type=str)
-
-args = parser.parse_args()
-
-
-def generate_data(train: bool, feature: str) -> pd.DataFrame:
+def generate_data(train: bool, feature: str, interval: int) -> pd.DataFrame:
     """ 
     Generates a training dataset 
     
@@ -42,7 +30,7 @@ def generate_data(train: bool, feature: str) -> pd.DataFrame:
     else:
         files = VALID_FILES + TEST_FILES
 
-    for filename in files:
+    for filename in tqdm(files):
 
         # Load training sample
         temp = pd.read_csv(filename)
@@ -52,7 +40,7 @@ def generate_data(train: bool, feature: str) -> pd.DataFrame:
         train_sample_pp = preprocess_sample(temp)
 
         # Feature engineering
-        train_sample_fe = abun_per_tempbin(train_sample_pp, feature, args.interval).reset_index(drop=True)
+        train_sample_fe = abun_per_tempbin(train_sample_pp, feature, interval).reset_index(drop=True)
         train_features_dict[sample_id] = train_sample_fe
 
     train_features = pd.concat(
@@ -62,6 +50,20 @@ def generate_data(train: bool, feature: str) -> pd.DataFrame:
     return train_features
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Feature Engineering Pipeline")
+    parser.add_argument("-f",
+                        "--feature",
+                        help="name of feature", type=str)
+    parser.add_argument("-i",
+                        "--interval",
+                        help="temperature interval", type=int)
+    parser.add_argument("-s",
+                        "--save",
+                        help="enter no or the location to save the model", default='no', type=str)
+
+    args = parser.parse_args()
+
+
     if args.feature == "max":
         train = generate_data(True, "max")
         test = generate_data(False, "max")

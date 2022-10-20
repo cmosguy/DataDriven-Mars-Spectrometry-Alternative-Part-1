@@ -5,26 +5,11 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 import pickle
 import argparse
 
+from tqdm import tqdm
+
 from models import get_model
 
-TRAIN_LABELS = pd.read_csv("data/train_labels.csv", index_col="sample_id")
-VALID_LABELS = pd.read_csv("data/val_labels.csv", index_col="sample_id") # stage 2
-LABELS = pd.concat([TRAIN_LABELS, VALID_LABELS]) # stage 2
-
-parser = argparse.ArgumentParser(description="Feature Engineering Pipeline")
-parser.add_argument("-m",
-                    "--model",
-                    help="name of model", type=str)
-parser.add_argument("-f",
-                    "--feature",
-                    help="name of feature", type=str)
-parser.add_argument("-s",
-                    "--save",
-                    help="enter no or the location to save the model", default='no', type=str)
-
-args = parser.parse_args()
-
-def train(train_df: pd.DataFrame, model_name: str, path: str) -> pd.DataFrame:
+def train(train_df: pd.DataFrame, model_name: str, path: str, LABELS: pd.DataFrame, n_splits=10) -> pd.DataFrame:
     """
     Trains the model
 
@@ -35,8 +20,8 @@ def train(train_df: pd.DataFrame, model_name: str, path: str) -> pd.DataFrame:
     """
 
     model_dict = defaultdict(list)
-    mskf = MultilabelStratifiedKFold(n_splits=10, shuffle=True, random_state=42)
-    for train_index, _ in mskf.split(train_df.values, LABELS):
+    mskf = MultilabelStratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    for train_index, _ in tqdm(mskf.split(train_df.values, LABELS), total=mskf.get_n_splits(), desc="k-fold"):
         X_train = train_df.values[train_index]
         y_train = LABELS.values[train_index]
         y_train = pd.DataFrame(y_train, columns=LABELS.columns)
@@ -49,6 +34,23 @@ def train(train_df: pd.DataFrame, model_name: str, path: str) -> pd.DataFrame:
     pickle.dump(model_dict, open(path, 'wb'))
 
 if __name__ == "__main__":
+    TRAIN_LABELS = pd.read_csv("data/train_labels.csv", index_col="sample_id")
+    VALID_LABELS = pd.read_csv("data/val_labels.csv", index_col="sample_id") # stage 2
+    LABELS = pd.concat([TRAIN_LABELS, VALID_LABELS]) # stage 2
+
+    parser = argparse.ArgumentParser(description="Feature Engineering Pipeline")
+    parser.add_argument("-m",
+                        "--model",
+                        help="name of model", type=str)
+    parser.add_argument("-f",
+                        "--feature",
+                        help="name of feature", type=str)
+    parser.add_argument("-s",
+                        "--save",
+                        help="enter no or the location to save the model", default='no', type=str)
+
+    args = parser.parse_args()
+
     train_df = pd.read_csv(f"data/savgol_features/{args.feature}_train.csv", header=[0], low_memory=False)
     train_df.columns = train_df.iloc[0]
     train_df = train_df.drop([0,1]).set_index('temp_bin', drop=True)

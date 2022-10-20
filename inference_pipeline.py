@@ -3,20 +3,6 @@ import numpy as np
 import pickle
 import argparse
 
-parser = argparse.ArgumentParser(description="Feature Engineering Pipeline")
-parser.add_argument("-m",
-                    "--model_path",
-                    help="path to pickle object of model", type=str)
-parser.add_argument("-f",
-                    "--feature",
-                    help="name of feature", type=str)
-parser.add_argument("-s",
-                    "--save",
-                    help="enter no or the location to save the model", default='no', type=str)
-
-args = parser.parse_args()
-
-
 def predict(test_df: pd.DataFrame, path: str):
     """
     Creates submission dataframe 
@@ -57,7 +43,21 @@ def load_object(file_path):
     return model
 
 if __name__ == "__main__":
-    test_df = pd.read_csv(f"data/stage2_features/{args.feature}_test.csv", header=[0], low_memory=False)
+    parser = argparse.ArgumentParser(description="Feature Engineering Pipeline")
+    parser.add_argument("-m",
+                        "--model_path",
+                        help="path to pickle object of model", type=str)
+    parser.add_argument("-f",
+                        "--feature",
+                        help="name of feature", type=str)
+    parser.add_argument("-s",
+                        "--save",
+                        help="enter no or the location to save the model", default='no', type=str)
+
+    args = parser.parse_args()
+
+
+    test_df = pd.read_csv(f"data/savgol_features/{args.feature}_test.csv", header=[0], low_memory=False)
     test_df.columns = test_df.iloc[0]
     test_df = test_df.drop([0,1]).set_index('temp_bin', drop=True)
     sub = predict(np.array(test_df), args.model_path)

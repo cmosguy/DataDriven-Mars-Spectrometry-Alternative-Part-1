@@ -1,3 +1,4 @@
+from pprint import pprint
 import pandas as pd
 import numpy as np
 from sklearn.metrics import make_scorer, log_loss
@@ -18,7 +19,7 @@ def evaluate_cv(model_name: str, train: pd.DataFrame):
     res = logloss_cross_val(model, np.array(train, dtype='float32')) # model, train
 
     print("Log Loss")
-    print(res[0])
+    pprint(res[0])
     print(f"Average Log Loss: {res[1]}")
 
 def logloss_cross_val(clf, X, y=None):

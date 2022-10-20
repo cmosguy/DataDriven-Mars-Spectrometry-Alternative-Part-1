@@ -3,6 +3,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
 from sklearn.naive_bayes import GaussianNB
 from lightgbm import LGBMClassifier
+import xgboost as xgb
 
 def get_model(model_name: str) -> object:
     """
@@ -36,6 +37,9 @@ def get_model(model_name: str) -> object:
                               learning_rate_init=0.001)
     elif model_name == "gaussian_nb":
         model = GaussianNB()
+    elif model_name == "xgboost":
+        model = xgb.XGBClassifier(tree_method="hist", n_estimators=64)
+
     else:
         raise Exception("Not Implemented")
 
